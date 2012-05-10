@@ -133,54 +133,52 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
  *		component. So we just have to count the number
  *		of occurances of the pixel's label.
  * 
- * \param	input	The labled connected components 
- * \param	output	The destination to hold the coherences
+ * \param	inputColors	The image belonging to the labled
+ *				connected components
+ * \param	inputLabels	The labled connected components 
+ * \return	A map containing the size and color value for each
+ *		connected component
  */
-void calcCoherence(cv::Mat input, cv::Mat &output)
+map<ushort, pair<uchar, ulong> >calcCoherence(cv::Mat inputColors, cv::Mat inputLabels)
 {
-	//Allocate output and set it to zero
-	output = cv::Mat(input.size(), CV_16U);
-	output.setTo(cv::Scalar(0));
-	
 	//1 channel pointer to input image
-	cv::Mat_<ushort>& ptrInput = (cv::Mat_<ushort>&)input;
-	//1 channel pointer to output image
-	cv::Mat_<ushort>& ptrOutput = (cv::Mat_<ushort>&)output; 
+	cv::Mat_<ushort>& ptrInputLabels = (cv::Mat_<ushort>&)inputLabels;
+	//1 channel pointer to input colors image
+	cv::Mat_<uchar>& ptrInputColors = (cv::Mat_<uchar>&)inputColors;
 
-	//Map to hold the number of pixels per label
-	map<ushort, ulong> coherences;
+	//Map to hold the number of pixels and the color per label
+	map<ushort, pair<uchar, ulong> > coherences;
 
 
 	//calculate coherence values per label	
-	for (int y = 0; y < input.size().height; y++)
+	for (int y = 0; y < inputLabels.size().height; y++)
 	{
-		for(int x = 0; x < input.size().width; x++)
+		for(int x = 0; x < inputLabels.size().width; x++)
 		{
-			if (coherences.find(ptrInput(y,x)) != coherences.end())
+			if (coherences.find(ptrInputLabels(y,x)) != coherences.end())
 			{
-				(coherences[ptrInput(y,x)])++;
+				coherences[ptrInputLabels(y,x)].second++;
 			}
 			else
 			{
-				coherences[ptrInput(y,x)] = 1;
+				coherences[ptrInputLabels(y,x)].second = 1;
+				coherences[ptrInputLabels(y,x)].first = ptrInputColors(y,x);
 			}
 		}
 	}
 
-	//Set coherence value for each pixel
-	for (int y = 0; y < output.size().height; y++)
-	{
-		for(int x = 0; x < output.size().width; x++)
-		{
-			ptrOutput(y,x) = coherences[ptrInput(y,x)];
-		}
-	}
+	return coherences;
 }
 
 
 int main (int argc, char** argv)
 {
+	//number of colors to reduce the color space to
 	const int numColors = 64;
+	
+	//threshold that tells the minimum size of a connected
+	//component blob needed to treat a pixel as coherent
+	const int coherenceThreshold = 10;
 
 	//input image
 	cv::Mat img = cv::imread(argv[1]);
@@ -221,19 +219,52 @@ int main (int argc, char** argv)
 	//	  of the current pixel.
 	cv::Mat labledComps;
 	connectedCompLabeling(reduced, labledComps);	
-	cv::Mat coherence;
-	calcCoherence(labledComps, coherence);	
+	//  label         color  size
+	map<ushort, pair<uchar, ulong> > coherence_map = calcCoherence(labledComps, reduced);	
+	map<ushort, pair<uchar, ulong> >::iterator it;
 
 	//Step 4: Calculate the CCVs
-	vector<pair<ushort, ushort> > ccv;
-	for (int i = 0; i < numColors; i++)
+	//   color        alpha  beta
+	map< uchar, pair<ulong, ulong> > ccv;
+	map< uchar, pair<ulong, ulong> >::iterator ccvit;
+	for(it = coherence_map.begin(); it != coherence_map.end(); it++)
 	{
-		uint alpha = 0;
-		uint beta  = 0;	
-		//TODO		
+		if (ccv.find(it->second.first) != ccv.end())
+		{
+			if (it->second.second >= coherenceThreshold)
+			{
+				//pixels in current blob are coherent -> increase alpha
+				ccv[it->second.first].first += it->second.second;
+			}
+			else
+			{
+				//pixels in current blob are incoherent -> increase beta
+				ccv[it->second.first].second += it->second.second;
+			}
+		}
+		else
+		{
+			if (it->second.second >= coherenceThreshold)
+			{
+				//pixels in current blob are coherent -> set alpha
+				ccv[it->second.first].first = it->second.second;
+				ccv[it->second.first].second = 0;
+			}
+			else
+			{
+				//pixels in current blob are incoherent -> set beta
+				ccv[it->second.first].first = 0;
+				ccv[it->second.first].second = it->second.second;
+			}
+		}
+			
 	}
-	
-	cv::imwrite("ccv.png", coherence);	
+
+	for(ccvit = ccv.begin(); ccvit != ccv.end(); ccvit++)
+	{
+		cout<<(uint)ccvit->first<<"\t: ("<<ccvit->second.first<<", "<<ccvit->second.second<<")"<<endl;
+	}
+		
 
 	return 0;
 }
