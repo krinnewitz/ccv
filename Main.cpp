@@ -6,6 +6,17 @@
 #include <iostream>
 #include <map>
 
+/**
+ * \file	Main.cpp
+ * \brief 	This is an implementation of image comparison using color 
+ * 		coherence vectors. Its' goal is mainly to determine how
+ *		good this method is in the context of applying textures
+ *		in polygonal models obtained from 3d point clouds by
+ *		3d reconstruction.
+ *
+ * \author	Kim Oliver Rinnewitz, krinnewitz@uos.de
+ */
+
 using namespace std;
 
 /**
@@ -15,7 +26,7 @@ using namespace std;
  * 
  * \param	input	The image to label connected components in
  * \param	output	The destination to hold the labels
-**/
+ */
 void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 {
 	//Allocate output and set it to zero
@@ -124,7 +135,7 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
  * 
  * \param	input	The labled connected components 
  * \param	output	The destination to hold the coherences
-**/
+ */
 void calcCoherence(cv::Mat input, cv::Mat &output)
 {
 	//Allocate output and set it to zero
@@ -165,8 +176,6 @@ void calcCoherence(cv::Mat input, cv::Mat &output)
 		}
 	}
 }
-
-
 
 
 int main (int argc, char** argv)
