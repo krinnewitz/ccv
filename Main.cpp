@@ -220,7 +220,7 @@ int main (int argc, char** argv)
 	cv::Mat labledComps;
 	connectedCompLabeling(reduced, labledComps);	
 	//  label         color  size
-	map<ushort, pair<uchar, ulong> > coherence_map = calcCoherence(labledComps, reduced);	
+	map<ushort, pair<uchar, ulong> > coherence_map = calcCoherence(reduced, labledComps);	
 	map<ushort, pair<uchar, ulong> >::iterator it;
 
 	//Step 4: Calculate the CCVs
