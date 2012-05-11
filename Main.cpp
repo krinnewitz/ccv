@@ -171,6 +171,104 @@ map<ushort, pair<uchar, ulong> >calcCoherence(cv::Mat inputColors, cv::Mat input
 }
 
 
+/**
+ * \brief Reduces the number of colors in the given image
+ * 
+ * \param input		The input image to reduce the colors in.
+			This must be a 3 channel image with 8 bit
+			per channel.
+ * \param output 	The destination to store the result in.
+			This will be an 8 bit one channel image.
+ * \param numColors	The maximum number of colors in the 
+ *			output image. Note, that this value must
+ *			be less than or equal to 256 since the 
+ *			output image has only one 8 bit channel.
+ */
+void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
+{
+	//allocate output
+	output = cv::Mat(input.size(), CV_8U);
+	//3 channel pointer to input image
+	cv::Mat_<cv::Vec3b>& ptrInput = (cv::Mat_<cv::Vec3b>&)input; 
+	//1 channel pointer to output image
+	cv::Mat_<uchar>& ptrOutput = (cv::Mat_<uchar>&)output;
+
+	for (int y = 0; y < input.size().height; y++)
+	{
+		for(int x = 0; x < input.size().width; x++)
+		{
+			unsigned long int currCol = 0;
+			currCol |= (ptrInput(y, x)[0]) << 16;
+			currCol |= (ptrInput(y, x)[1]) <<  8;
+			currCol |= (ptrInput(y, x)[2]) <<  0;
+			ptrOutput(y,x) = currCol / (pow(2, 24) / numColors);
+		}
+	}
+}
+
+
+/**
+ * \brief Calculates the CCV from the given coherence values wrt. the given threshold
+ * 
+ * \param	coherenceMap		The map containing the information about 
+ *					the size and color of the labled connected 
+ *					components in the image
+ * \param	coherenceThreshold	A threshold wich indicates the minimum size
+ *					of a color region to consider it's pixels as
+ *					coherent
+ *
+ * \return	A color coherence vector given by a map that holds the alpha and beta
+ *		values for each color.
+ */
+map< uchar, pair<ulong, ulong> > calculateCCV(map<ushort, pair<uchar, ulong> > coherenceMap, int coherenceThreshold)
+{
+	//This mal holds the alpha and beta values for each color and can be refered to 
+	//as the color coherence vector.
+	//   color        alpha  beta
+	map< uchar, pair<ulong, ulong> > ccv;
+	map< uchar, pair<ulong, ulong> >::iterator ccvit;
+
+	//Iterator over the coherenceMap
+	map<ushort, pair<uchar, ulong> >::iterator it;
+
+	//Walk through the coherence map and sum up the incoherent and 
+	//coherent pixels for every color
+	for(it = coherenceMap.begin(); it != coherenceMap.end(); it++)
+	{
+		if (ccv.find(it->second.first) != ccv.end())
+		{
+			//we already have this color in the ccv
+			if (it->second.second >= coherenceThreshold)
+			{
+				//pixels in current blob are coherent -> increase alpha
+				ccv[it->second.first].first += it->second.second;
+			}
+			else
+			{
+				//pixels in current blob are incoherent -> increase beta
+				ccv[it->second.first].second += it->second.second;
+			}
+		}
+		else
+		{
+			//we don't have this color in our ccv yet and need to add it
+			if (it->second.second >= coherenceThreshold)
+			{
+				//pixels in current blob are coherent -> set alpha
+				ccv[it->second.first].first = it->second.second;
+				ccv[it->second.first].second = 0;
+			}
+			else
+			{
+				//pixels in current blob are incoherent -> set beta
+				ccv[it->second.first].first = 0;
+				ccv[it->second.first].second = it->second.second;
+			}
+		}
+			
+	}
+	return ccv;
+}
 int main (int argc, char** argv)
 {
 	//number of colors to reduce the color space to
@@ -187,13 +285,7 @@ int main (int argc, char** argv)
 	cv::Mat blurred;
 
 	//color reduced image
-	cv::Mat reduced(img.size(), CV_8U);
-
-	//3 channel pointer to blurred image
-	cv::Mat_<cv::Vec3b>& ptrBlurred = (cv::Mat_<cv::Vec3b>&)blurred; 
-	
-	//1 channel pointer to reduced image
-	cv::Mat_<uchar>& ptrReduced = (cv::Mat_<uchar>&)reduced; 
+	cv::Mat reduced;
 
 
 	//Step 1: Blur the image slightly with a 3x3 box filter
@@ -201,17 +293,7 @@ int main (int argc, char** argv)
 
 	//Step 2: Discretize the colorspace and reude the number
 	//	  colors to numColors
-	for (int y = 0; y < blurred.size().height; y++)
-	{
-		for(int x = 0; x < blurred.size().width; x++)
-		{
-			unsigned long int currCol = 0;
-			currCol |= (ptrBlurred(y, x)[0]) << 16;
-			currCol |= (ptrBlurred(y, x)[1]) <<  8;
-			currCol |= (ptrBlurred(y, x)[2]) <<  0;
-			ptrReduced(y,x) = currCol / (pow(2, 24) / numColors);
-		}
-	}
+	reduceColors(blurred, reduced, numColors);
 	
 	//Step 3: Label connected components in the image in order
 	//	  to determine the coherence of each pixel. The 
@@ -220,46 +302,15 @@ int main (int argc, char** argv)
 	cv::Mat labledComps;
 	connectedCompLabeling(reduced, labledComps);	
 	//  label         color  size
-	map<ushort, pair<uchar, ulong> > coherence_map = calcCoherence(reduced, labledComps);	
-	map<ushort, pair<uchar, ulong> >::iterator it;
+	map<ushort, pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
 
-	//Step 4: Calculate the CCVs
+	//Step 4: Calculate the CCV
 	//   color        alpha  beta
-	map< uchar, pair<ulong, ulong> > ccv;
-	map< uchar, pair<ulong, ulong> >::iterator ccvit;
-	for(it = coherence_map.begin(); it != coherence_map.end(); it++)
-	{
-		if (ccv.find(it->second.first) != ccv.end())
-		{
-			if (it->second.second >= coherenceThreshold)
-			{
-				//pixels in current blob are coherent -> increase alpha
-				ccv[it->second.first].first += it->second.second;
-			}
-			else
-			{
-				//pixels in current blob are incoherent -> increase beta
-				ccv[it->second.first].second += it->second.second;
-			}
-		}
-		else
-		{
-			if (it->second.second >= coherenceThreshold)
-			{
-				//pixels in current blob are coherent -> set alpha
-				ccv[it->second.first].first = it->second.second;
-				ccv[it->second.first].second = 0;
-			}
-			else
-			{
-				//pixels in current blob are incoherent -> set beta
-				ccv[it->second.first].first = 0;
-				ccv[it->second.first].second = it->second.second;
-			}
-		}
-			
-	}
+	map< uchar, pair<ulong, ulong> > ccv = calculateCCV(coherenceMap, coherenceThreshold);
 
+
+	//debug output: Write the CCV to standard output
+	map< uchar, pair<ulong, ulong> >::iterator ccvit;
 	for(ccvit = ccv.begin(); ccvit != ccv.end(); ccvit++)
 	{
 		cout<<(uint)ccvit->first<<"\t: ("<<ccvit->second.first<<", "<<ccvit->second.second<<")"<<endl;
