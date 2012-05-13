@@ -248,9 +248,8 @@ void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
 /**
  * \brief Calculates the CCV from the given coherence values wrt. the given threshold
  * 
- * \param	coherenceMap		The map containing the information about 
- *					the size and color of the labled connected 
- *					components in the image
+ * \param	img			The image to calculate the CCV for
+ * \param	numColors		The number of colors to reduce the image to
  * \param	coherenceThreshold	A threshold wich indicates the minimum size
  *					of a color region to consider it's pixels as
  *					coherent
@@ -258,9 +257,33 @@ void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
  * \return	A color coherence vector given by a map that holds the alpha and beta
  *		values for each color.
  */
-map< uchar, pair<ulong, ulong> > calculateCCV(map<ushort, pair<uchar, ulong> > coherenceMap, int coherenceThreshold)
+map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int coherenceThreshold)
 {
-	//This mal holds the alpha and beta values for each color and can be refered to 
+	//blurred image
+	cv::Mat blurred;
+
+	//color reduced image
+	cv::Mat reduced;
+
+
+	//Step 1: Blur the image slightly with a 3x3 box filter
+	cv::blur(img, blurred, cv::Size(3,3)); //3x3 box filter
+
+	//Step 2: Discretize the colorspace and reude the number
+	//	  colors to numColors
+	reduceColors(blurred, reduced, numColors);
+	
+	//Step 3: Label connected components in the image in order
+	//	  to determine the coherence of each pixel. The 
+	//	  coherence is the size of the connected component
+	//	  of the current pixel.
+	cv::Mat labledComps;
+	connectedCompLabeling(reduced, labledComps);	
+	//  label         color  size
+	map<ushort, pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
+
+	//Step 4: Calculate the CCV
+	//This map holds the alpha and beta values for each color and can be refered to 
 	//as the color coherence vector.
 	//   color        alpha  beta
 	map< uchar, pair<ulong, ulong> > ccv;
@@ -321,33 +344,9 @@ int main (int argc, char** argv)
 	//input image
 	cv::Mat img = cv::imread(argv[1]);
 	
-	//blurred image
-	cv::Mat blurred;
 
-	//color reduced image
-	cv::Mat reduced;
-
-
-	//Step 1: Blur the image slightly with a 3x3 box filter
-	cv::blur(img, blurred, cv::Size(3,3)); //3x3 box filter
-
-	//Step 2: Discretize the colorspace and reude the number
-	//	  colors to numColors
-	reduceColors(blurred, reduced, numColors);
-	
-	//Step 3: Label connected components in the image in order
-	//	  to determine the coherence of each pixel. The 
-	//	  coherence is the size of the connected component
-	//	  of the current pixel.
-	cv::Mat labledComps;
-	connectedCompLabeling(reduced, labledComps);	
-	//  label         color  size
-	map<ushort, pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
-	cv::imwrite( "ccv.ppm", labledComps);
-
-	//Step 4: Calculate the CCV
 	//   color        alpha  beta
-	map< uchar, pair<ulong, ulong> > ccv = calculateCCV(coherenceMap, coherenceThreshold);
+	map< uchar, pair<ulong, ulong> > ccv = calculateCCV(img, numColors, coherenceThreshold);
 
 
 	//debug output: Write the CCV to standard output
