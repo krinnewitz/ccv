@@ -357,31 +357,39 @@ int compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar, pair<ulong, u
 
 int main (int argc, char** argv)
 {
-	//number of colors to reduce the color space to.
-	//This value has to be smaller than or equal to 256.
-	const int numColors = 64;
-	
-	//threshold that tells the minimum size of a connected
-	//component blob needed to treat a pixel as coherent
-	const int coherenceThreshold = 10;
-
-	//input image
-	cv::Mat img = cv::imread(argv[1]);
-	
-
-	//   color        alpha  beta
-	map< uchar, pair<ulong, ulong> > ccv = calculateCCV(img, numColors, coherenceThreshold);
-
-	//debug output. Should be 0.
-	cout<<compareCCVs(ccv, ccv)<<endl<<endl;
-
-	//debug output: Write the CCV to standard output
-	map< uchar, pair<ulong, ulong> >::iterator ccvit;
-	for(ccvit = ccv.begin(); ccvit != ccv.end(); ccvit++)
+	if (argc == 5)
 	{
-		cout<<(uint)ccvit->first<<"\t: ("<<ccvit->second.first<<", "<<ccvit->second.second<<")"<<endl;
-	}
+		//number of colors to reduce the color space to.
+		//This value has to be smaller than or equal to 256.
+		int numColors = atoi(argv[3]);
+		
+		//threshold that tells the minimum size of a connected
+		//component blob needed to treat a pixel as coherent
+		int coherenceThreshold = atoi(argv[4]);
+
+		//input images
+		cv::Mat img1 = cv::imread(argv[1]);
+		cv::Mat img2 = cv::imread(argv[2]);
 		
 
-	return 0;
+		//   color        alpha  beta
+		map< uchar, pair<ulong, ulong> > ccv1 = calculateCCV(img1, numColors, coherenceThreshold);
+		map< uchar, pair<ulong, ulong> > ccv2 = calculateCCV(img2, numColors, coherenceThreshold);
+
+		//debug output
+		cout<<compareCCVs(ccv1, ccv2)<<endl;
+
+		//debug output: Write the CCV to standard output
+		//map< uchar, pair<ulong, ulong> >::iterator ccvit;
+		//for(ccvit = ccv1.begin(); ccvit != ccv1.end(); ccvit++)
+		//{
+		//	cout<<(uint)ccvit->first<<"\t: ("<<ccvit->second.first<<", "<<ccvit->second.second<<")"<<endl;
+		//}
+		return EXIT_SUCCESS;			
+	}
+	else
+	{
+		cout<<"Usage: "<<argv[0]<<" <first image> <second image> <number of colors> <coherence threshold>"<<endl;
+		return EXIT_FAILURE;
+	}
 }
