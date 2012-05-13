@@ -246,7 +246,7 @@ void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
 
 
 /**
- * \brief Calculates the CCV from the given coherence values wrt. the given threshold
+ * \brief Calculates the CCV for the given image.
  * 
  * \param	img			The image to calculate the CCV for
  * \param	numColors		The number of colors to reduce the image to
