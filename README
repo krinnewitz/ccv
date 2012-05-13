@@ -1,0 +1,17 @@
+1. Description
+==============
+This is an implementation of color coherence vectors as described in 
+http://www.labiem.cpgei.ct.utfpr.edu.br/Members/humberto/disciplinas/pdi/papers/comparingimagesusingcolor.pdf 
+
+It uses OpenCV and there may be implementations with a much better performance.
+The main purpose is to evaluate how successful this method can be used in the
+context of texture application in 3d reconstructions.
+
+2. Requirements
+===============
+You need to have a recent version of OpenCV installed. 
+
+3. Compiling
+============
+A makefile will follow shortly. In the meantime you can compile the software 
+by entering g++ -o ccv Main.cpp -lopencv_core -lopencv_imgproc -lopencv_highgui
