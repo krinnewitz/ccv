@@ -20,6 +20,35 @@
 using namespace std;
 
 /**
+ * \brief 	Implementation of the find algorithm for disjoint sets.
+ * 
+ * \param 	x	The element to find
+ * \param	parent	The disjoint set data structure to work on (tree)
+ *
+ * \return 	The number of the set which contains the given element
+ */
+unsigned long int find(unsigned long int x, unsigned long int parent[])
+{
+	while(parent[x] != x)
+	{
+		x = parent[x];
+	}
+	return x;
+}
+
+/**
+ * \brief	Implementation of the union algorithm for disjoint sets.
+ *
+ * \param	x	The first set for the two sets to unite 
+ * \param	y	The second set for the two sets to unite 
+ * \param	parent	The disjoint set data structure to work on (tree)
+ */
+void unite(unsigned long int x, unsigned long int y, unsigned long int parent[])
+{
+	parent[find(x, parent)] = find(y, parent);
+}
+
+/**
  * \brief 	Labels connected components in the given image.
  *		This is an implementation of the algorithm of
  *		Rosenfeld et al
@@ -38,8 +67,12 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 	//1 channel pointer to output image
 	cv::Mat_<ushort>& ptrOutput = (cv::Mat_<ushort>&)output; 
 
+	//disjoint set data structure to manage the labels 
+	unsigned long int* parent = new unsigned long int[output.size().height * output.size().width];
+	for(unsigned long int i = 0; i < output.size().height * output.size().width; i++) parent[i] = i;
+
 	//first pass: Initial labeling
-	int currentLabel = 0;
+	unsigned short int currentLabel = 0;
 	for (int y = 0; y < input.size().height; y++)
 	{
 		for(int x = 0; x < input.size().width; x++)
@@ -53,7 +86,7 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 				}
 				else
 				{
-					//First row. Only check leftmost pixel	
+					//First row. Only check left pixel	
 					if (ptrInput(y,x) == ptrInput(y, x - 1))
 					{
 						//same region as left pixel -> assign same label
@@ -70,7 +103,7 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 			{
 				if(x == 0)
 				{
-					//First column. Only check topmost pixel	
+					//First column. Only check top pixel	
 					if (ptrInput(y,x) == ptrInput(y - 1, x))
 					{
 						//same region as top pixel -> assign same label
@@ -84,7 +117,7 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 				}
 				else
 				{
-					//Regular column. Check topmost and leftmost pixel
+					//Regular column. Check top and left pixel
 					if (ptrInput(y,x) == ptrInput(y, x - 1) && ptrInput(y,x) == ptrInput(y - 1, x))
 					{
 						//same region as left and top pixel -> assign minimum label of both
@@ -92,7 +125,9 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 						if (ptrOutput(y, x - 1) != ptrOutput(y - 1, x))
 						{
 							//mark labels as equivalent
-							//TODO
+							//we are using the union/find algorithm for disjoint sets
+							unite(find(ptrOutput(y, x - 1), parent),
+							      find(ptrOutput(y - 1, x), parent), parent);
 						}
 					}
 					else
@@ -118,13 +153,16 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
 	}
 	
 	//second pass: Merge equivalent labels
-	for (int y = 0; y < input.size().height; y++)
+	for (int y = 0; y < output.size().height; y++)
 	{
-		for(int x = 0; x < input.size().width; x++)
+		for(int x = 0; x < output.size().width; x++)
 		{
-			//TODO
+			//we are using the union/find algorithm for disjoint sets
+			ptrOutput(y,x) = (unsigned short int) find(ptrOutput(y, x), parent);
 		}
 	}
+
+	delete[] parent;
 }
 
 /**
@@ -269,9 +307,11 @@ map< uchar, pair<ulong, ulong> > calculateCCV(map<ushort, pair<uchar, ulong> > c
 	}
 	return ccv;
 }
+
 int main (int argc, char** argv)
 {
-	//number of colors to reduce the color space to
+	//number of colors to reduce the color space to.
+	//This value has to be smaller than or equal to 256.
 	const int numColors = 64;
 	
 	//threshold that tells the minimum size of a connected
@@ -303,6 +343,7 @@ int main (int argc, char** argv)
 	connectedCompLabeling(reduced, labledComps);	
 	//  label         color  size
 	map<ushort, pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
+	cv::imwrite( "ccv.ppm", labledComps);
 
 	//Step 4: Calculate the CCV
 	//   color        alpha  beta
