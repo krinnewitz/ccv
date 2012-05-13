@@ -331,6 +331,30 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 	return ccv;
 }
 
+
+/**
+ * \brief	Calculates the distance between the two given CCVs.
+ *
+ * \param	ccv1	The first CCV
+ * \param	ccv2	The second CCV
+ *
+ * \return	The distance between the two CCVs
+ */
+int compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar, pair<ulong, ulong> > ccv2)
+{
+	int result = 0;
+
+	map< uchar, pair<ulong, ulong> >::iterator ccvit;
+
+	for(ccvit = ccv1.begin(); ccvit != ccv1.end(); ccvit++)
+	{
+		//|alpha1 - alpha2| + |beta1 - beta2|
+		result += abs(ccvit->second.first  - ccv2[ccvit->first].first)
+			+ abs(ccvit->second.second - ccv2[ccvit->first].second);
+	}
+	return result;
+}
+
 int main (int argc, char** argv)
 {
 	//number of colors to reduce the color space to.
@@ -348,6 +372,8 @@ int main (int argc, char** argv)
 	//   color        alpha  beta
 	map< uchar, pair<ulong, ulong> > ccv = calculateCCV(img, numColors, coherenceThreshold);
 
+	//debug output. Should be 0.
+	cout<<compareCCVs(ccv, ccv)<<endl<<endl;
 
 	//debug output: Write the CCV to standard output
 	map< uchar, pair<ulong, ulong> >::iterator ccvit;
