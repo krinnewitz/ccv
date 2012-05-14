@@ -328,6 +328,17 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 		}
 			
 	}
+
+	//set unused colors to 0	
+	for(unsigned char c = 0; c < numColors; c++)
+	{
+		if (ccv.find(c) == ccv.end())
+		{
+			ccv[c].first  = 0;
+			ccv[c].second = 0;
+		}
+	}
+
 	return ccv;
 }
 
@@ -340,9 +351,9 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
  *
  * \return	The distance between the two CCVs
  */
-int compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar, pair<ulong, ulong> > ccv2)
+unsigned long int compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar, pair<ulong, ulong> > ccv2)
 {
-	int result = 0;
+	unsigned long int result = 0;
 
 	map< uchar, pair<ulong, ulong> >::iterator ccvit;
 
