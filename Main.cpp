@@ -265,6 +265,8 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 	//color reduced image
 	cv::Mat reduced;
 
+	//connected components
+	cv::Mat labledComps;
 
 	//Step 1: Blur the image slightly with a 3x3 box filter
 	cv::blur(img, blurred, cv::Size(3,3)); //3x3 box filter
@@ -277,7 +279,6 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 	//	  to determine the coherence of each pixel. The 
 	//	  coherence is the size of the connected component
 	//	  of the current pixel.
-	cv::Mat labledComps;
 	connectedCompLabeling(reduced, labledComps);	
 	//  label         color  size
 	map<ushort, pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
@@ -287,7 +288,6 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 	//as the color coherence vector.
 	//   color        alpha  beta
 	map< uchar, pair<ulong, ulong> > ccv;
-	map< uchar, pair<ulong, ulong> >::iterator ccvit;
 
 	//Iterator over the coherenceMap
 	map<ushort, pair<uchar, ulong> >::iterator it;
