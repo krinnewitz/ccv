@@ -169,7 +169,7 @@ void connectedCompLabeling(cv::Mat input, cv::Mat &output)
  * \brief 	Calculates the coherence of each pixel. The
  *		coherence is the size of the pixel's connected
  *		component. So we just have to count the number
- *		of occurances of the pixel's label.
+ *		of occurrences of the pixel's label.
  * 
  * \param	inputColors	The image belonging to the labled
  *				connected components
@@ -250,7 +250,7 @@ void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
  * 
  * \param	img			The image to calculate the CCV for
  * \param	numColors		The number of colors to reduce the image to
- * \param	coherenceThreshold	A threshold wich indicates the minimum size
+ * \param	coherenceThreshold	A threshold which indicates the minimum size
  *					of a color region to consider it's pixels as
  *					coherent
  *
@@ -271,7 +271,7 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 	//Step 1: Blur the image slightly with a 3x3 box filter
 	cv::blur(img, blurred, cv::Size(3,3)); //3x3 box filter
 
-	//Step 2: Discretize the colorspace and reude the number
+	//Step 2: Discretize the color space and reduce the number
 	//	  colors to numColors
 	reduceColors(blurred, reduced, numColors);
 	
@@ -284,7 +284,7 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
 	map<ushort, pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
 
 	//Step 4: Calculate the CCV
-	//This map holds the alpha and beta values for each color and can be refered to 
+	//This map holds the alpha and beta values for each color and can be referred to 
 	//as the color coherence vector.
 	//   color        alpha  beta
 	map< uchar, pair<ulong, ulong> > ccv;
