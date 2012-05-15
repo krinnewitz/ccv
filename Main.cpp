@@ -360,8 +360,8 @@ unsigned long int compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar,
 	for(ccvit = ccv1.begin(); ccvit != ccv1.end(); ccvit++)
 	{
 		//|alpha1 - alpha2| + |beta1 - beta2|
-		result += abs(ccvit->second.first  - ccv2[ccvit->first].first)
-			+ abs(ccvit->second.second - ccv2[ccvit->first].second);
+		result += abs((int)ccvit->second.first  - (int)ccv2[ccvit->first].first)
+			+ abs((int)ccvit->second.second - (int)ccv2[ccvit->first].second);
 	}
 	return result;
 }
