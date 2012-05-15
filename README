@@ -13,5 +13,8 @@ You need to have a recent version of OpenCV installed.
 
 3. Compiling
 ============
-A makefile will follow shortly. In the meantime you can compile the software 
-by entering g++ -o ccv Main.cpp -lopencv_core -lopencv_imgproc -lopencv_highgui
+You can compile the program by entering the following commands on the command line:
+
+    mkdir build && cd build
+    cmake ..
+    make
