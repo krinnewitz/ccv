@@ -351,17 +351,17 @@ map< uchar, pair<ulong, ulong> > calculateCCV(cv::Mat img, int numColors, int co
  *
  * \return	The distance between the two CCVs
  */
-unsigned long int compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar, pair<ulong, ulong> > ccv2)
+float compareCCVs(map< uchar, pair<ulong, ulong> > ccv1, map< uchar, pair<ulong, ulong> > ccv2, unsigned long int imgSize1, unsigned long int imgSize2)
 {
-	unsigned long int result = 0;
+	float result = 0;
 
 	map< uchar, pair<ulong, ulong> >::iterator ccvit;
 
 	for(ccvit = ccv1.begin(); ccvit != ccv1.end(); ccvit++)
 	{
 		//|alpha1 - alpha2| + |beta1 - beta2|
-		result += abs((int)ccvit->second.first  - (int)ccv2[ccvit->first].first)
-			+ abs((int)ccvit->second.second - (int)ccv2[ccvit->first].second);
+		result += fabs((int)ccvit->second.first / (1.0f * imgSize1)  - (int)ccv2[ccvit->first].first / (1.0f * imgSize2))
+			+ fabs((int)ccvit->second.second / (1.0f * imgSize1) - (int)ccv2[ccvit->first].second / (1.0f * imgSize2));
 	}
 	return result;
 }
@@ -388,7 +388,7 @@ int main (int argc, char** argv)
 		map< uchar, pair<ulong, ulong> > ccv2 = calculateCCV(img2, numColors, coherenceThreshold);
 
 		//debug output
-		cout<<compareCCVs(ccv1, ccv2)<<endl;
+		cout<<compareCCVs(ccv1, ccv2, img1.cols * img1.rows, img2.cols * img2.rows)<<endl;
 
 		//debug output: Write the CCV to standard output
 		//map< uchar, pair<ulong, ulong> >::iterator ccvit;
