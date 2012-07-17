@@ -121,13 +121,12 @@ std::map< uchar, std::pair<ulong, ulong> > CCV::calculateCCV(cv::Mat img)
 	//Step 2: Discretize the color space and reduce the number
 	//	  colors to m_numColors
 	ImageProcessor::reduceColorsG(blurred, reduced, m_numColors);
-std::cout<<"Reduced colors"<<std::endl;	
+
 	//Step 3: Label connected components in the image in order
 	//	  to determine the coherence of each pixel. The 
 	//	  coherence is the size of the connected component
 	//	  of the current pixel.
 	ImageProcessor::connectedCompLabeling(reduced, labledComps);	
-std::cout<<"labeled connected components"<<std::endl;	
 	//  label         color  size
 	std::map<ushort, std::pair<uchar, ulong> > coherenceMap = calcCoherence(reduced, labledComps);	
 

@@ -70,6 +70,7 @@ unsigned long int ImageProcessor::find(unsigned long int x, unsigned long int pa
 {
 	while(parent[x] != x)
 	{
+		parent[x] = parent[parent[x]]; //path halving
 		x = parent[x];
 	}
 	return x;
@@ -94,6 +95,11 @@ void ImageProcessor::connectedCompLabeling(cv::Mat input, cv::Mat &output)
 	//disjoint set data structure to manage the labels 
 	unsigned long int* parent = new unsigned long int[output.size().height * output.size().width];
 	for(unsigned long int i = 0; i < output.size().height * output.size().width; i++) parent[i] = i;
+
+	std::vector<int>  rank (output.size().height * output.size().width);
+//	std::vector<int>  parent (output.size().height * output.size().width);
+//	boost::disjoint_sets<int*,int*> ds(&rank[0], &parent[0]);
+//	for(unsigned long int i = 0; i < output.size().height * output.size().width; i++) {ds.make_set(i);}
 
 	//first pass: Initial labeling
 	unsigned short int currentLabel = 0;
@@ -152,6 +158,7 @@ void ImageProcessor::connectedCompLabeling(cv::Mat input, cv::Mat &output)
 							//we are using the union/find algorithm for disjoint sets
 							ImageProcessor::unite(ImageProcessor::find(ptrOutput(y, x - 1), parent),
 									      ImageProcessor::find(ptrOutput(y - 1, x), parent), parent);
+//							ds.union_set(ptrOutput(y, x - 1), ptrOutput(y - 1, x));
 						}
 					}
 					else
@@ -183,19 +190,12 @@ void ImageProcessor::connectedCompLabeling(cv::Mat input, cv::Mat &output)
 		{
 			//we are using the union/find algorithm for disjoint sets
 			ptrOutput(y,x) = (unsigned short int) ImageProcessor::find(ptrOutput(y, x), parent);
+//			ptrOutput(y,x) = ds.find_set(ptrOutput(y, x));
 		}
 	}
 
 	delete[] parent;
 }
-
-
-
-
-
-
-
-
 
 
 /*

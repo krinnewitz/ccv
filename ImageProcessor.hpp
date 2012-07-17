@@ -32,6 +32,7 @@
 #include <math.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+//#include <boost/pending/disjoint_sets.hpp>
 //#include <geometry/Texture.hpp>
 //#include <geometry/Statistics.hpp>
 //#include <geometry/AutoCorr.hpp>
